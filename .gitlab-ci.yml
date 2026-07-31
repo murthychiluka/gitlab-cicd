@@ -1,0 +1,48 @@
+stages:
+  - validate
+  - plan
+  - apply
+  - destroy
+
+image:
+  name: registry.gitlab.com/gitlab-org/terraform-images/stable:latest
+  entrypoint:
+    - ""
+
+variables:
+  AWS_DEFAULT_REGION: "us-east-1"
+
+before_script:
+  - terraform --version
+  - terraform init
+
+validate:
+  stage: validate
+  script:
+    - terraform validate
+
+plan:
+  stage: plan
+  script:
+    - terraform plan -out=tfplan
+  artifacts:
+    paths:
+      - tfplan
+    expire_in: 1 hour
+
+apply:
+  stage: apply
+  script:
+    - terraform apply -auto-approve tfplan
+  dependencies:
+    - plan
+  only:
+    - main
+
+destroy:
+  stage: destroy
+  script:
+    - terraform destroy -auto-approve
+  when: manual
+  only:
+    - main
